@@ -7,8 +7,8 @@ Project Title: DriveEase - Mobile Vehicle Rental System
 GitHub Repository: https://github.com/your-github-username/driveease-mobile-system
 
 02). Student / Team Details
-Student ID: ITxxxxxxx
-Student Name: [Your Full Name]
+Student ID: IT21313998
+Student Name: Kavindu Rasara
 Module: SE2020 - Web and Mobile Technologies
 Degree: BSc (Hons) in Software Engineering - Year 2 Semester 2
 
