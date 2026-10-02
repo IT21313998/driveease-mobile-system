@@ -2,13 +2,15 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// For Android Emulator: http://10.0.2.2:5000 points to host PC
-// For iOS/Web: http://localhost:5000
-// For Physical Device via Wi-Fi: use your computer's Wi-Fi IP (e.g. http://192.168.8.185:5000)
+// ── HOST MACHINE IP ──────────────────────────────────────────────────────────
+// Detected host Wi-Fi IP: 192.168.248.163
+// Android Emulator: use 10.0.2.2 (special alias to host)
+// Physical Phone on same Wi-Fi: use 192.168.248.163
+// ─────────────────────────────────────────────────────────────────────────────
 export const DEFAULT_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:5000',
-  ios: 'http://localhost:5000',
-  default: 'http://localhost:5000',
+  android: 'http://10.0.2.2:5000',       // Android Emulator → host PC
+  ios: 'http://192.168.248.163:5000',    // iOS device on same Wi-Fi
+  default: 'http://192.168.248.163:5000',// Web or physical Android on Wi-Fi
 });
 
 const client = axios.create({
