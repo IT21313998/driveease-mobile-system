@@ -16,6 +16,8 @@ dist/
 build/
 .expo/
 web-build/
+*.zip
+SE2020_*_Submission/
 
 # Uploads (optional: you can keep sample images or gitignore dynamic uploads)
 # backend/uploads/*
