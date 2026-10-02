@@ -5,12 +5,14 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 
 const LoginScreen = ({ navigation }) => {
-  const { login } = useContext(AuthContext);
+  const { login, baseUrl, setCustomBaseUrl } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [generalError, setGeneralError] = useState('');
+  const [showServerConfig, setShowServerConfig] = useState(false);
+  const [customUrl, setCustomUrl] = useState(baseUrl);
 
   const validate = () => {
     let errs = {};
@@ -89,6 +91,54 @@ const LoginScreen = ({ navigation }) => {
           <Text style={styles.linkText}>Sign Up</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Quick Server URL Switcher */}
+      <View style={styles.serverConfigBox}>
+        <TouchableOpacity onPress={() => setShowServerConfig(!showServerConfig)}>
+          <Text style={styles.serverConfigToggle}>
+            ⚙️ Server URL: <Text style={styles.serverConfigUrl}>{baseUrl}</Text> (Tap to change)
+          </Text>
+        </TouchableOpacity>
+
+        {showServerConfig && (
+          <View style={styles.serverInputContainer}>
+            <Input
+              value={customUrl}
+              onChangeText={setCustomUrl}
+              placeholder="e.g. http://10.0.2.2:5000 or http://192.168.8.185:5000"
+              autoCapitalize="none"
+            />
+            <View style={styles.presetButtons}>
+              <TouchableOpacity
+                style={styles.presetBtn}
+                onPress={() => setCustomUrl('http://10.0.2.2:5000')}
+              >
+                <Text style={styles.presetBtnText}>Android Emulator</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetBtn}
+                onPress={() => setCustomUrl('http://192.168.8.185:5000')}
+              >
+                <Text style={styles.presetBtnText}>Wi-Fi IP</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetBtn}
+                onPress={() => setCustomUrl('http://localhost:5000')}
+              >
+                <Text style={styles.presetBtnText}>Web / Localhost</Text>
+              </TouchableOpacity>
+            </View>
+            <Button
+              title="Apply Server URL"
+              onPress={async () => {
+                await setCustomBaseUrl(customUrl);
+                setShowServerConfig(false);
+                Alert.alert('Saved', `API endpoint set to: ${customUrl}`);
+              }}
+            />
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 };
@@ -145,6 +195,50 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontSize: 14,
     fontWeight: '600',
+  },
+  serverConfigBox: {
+    marginTop: 28,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  serverConfigToggle: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  serverConfigUrl: {
+    color: '#2563EB',
+    fontWeight: '700',
+  },
+  serverInputContainer: {
+    width: '100%',
+    marginTop: 12,
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  presetButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 8,
+    gap: 6,
+  },
+  presetBtn: {
+    flex: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  presetBtnText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#334155',
   },
 });
 
