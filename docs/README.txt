@@ -13,7 +13,7 @@ Module: SE2020 - Web and Mobile Technologies
 Degree: BSc (Hons) in Software Engineering - Year 2 Semester 2
 
 03). Deployment Details
-Backend Live URL: https://driveease-api.onrender.com
+Backend Live URL: https://driveease-api-it21313998.onrender.com
 MongoDB Database: MongoDB Atlas (Cloud Hosted)
 Mobile Client: React Native (Expo)
 

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { createVehicleApi } from '../../api/vehicleApi';
@@ -31,10 +32,12 @@ const AddVehicleScreen = ({ navigation }) => {
 
   const pickImage = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        Alert.alert('Permission Denied', 'Permission to access gallery is required!');
-        return;
+      if (Platform.OS !== 'web') {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+          Alert.alert('Permission Denied', 'Permission to access gallery is required!');
+          return;
+        }
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -49,7 +52,11 @@ const AddVehicleScreen = ({ navigation }) => {
         if (errors.image) setErrors({ ...errors, image: null });
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to pick image: ' + err.message);
+      if (Platform.OS === 'web') {
+        window.alert('Failed to pick image: ' + err.message);
+      } else {
+        Alert.alert('Error', 'Failed to pick image: ' + err.message);
+      }
     }
   };
 
@@ -86,32 +93,50 @@ const AddVehicleScreen = ({ navigation }) => {
       formData.append('fuelType', fuelType);
       formData.append('description', description.trim());
 
-      // Append image as file
-      const filename = imageUri.split('/').pop() || 'vehicle.jpg';
+      // Prepare filename and MIME type
+      let filename = imageUri.split('/').pop() || 'vehicle.jpg';
+      if (!filename.includes('.')) {
+        filename += '.jpg';
+      }
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : `image/jpeg`;
 
-      formData.append('image', {
-        uri: imageUri,
-        name: filename,
-        type: type,
-      });
+      if (Platform.OS === 'web') {
+        // On web, convert image URI to a real Blob before appending
+        const imageResponse = await fetch(imageUri);
+        const blob = await imageResponse.blob();
+        formData.append('image', blob, filename);
+      } else {
+        // On native (Android / iOS), React Native networking expects { uri, name, type }
+        formData.append('image', {
+          uri: imageUri,
+          name: filename,
+          type: type,
+        });
+      }
 
       await createVehicleApi(formData);
-      Alert.alert('Vehicle Added! 🚗', 'The vehicle is now active in your fleet catalog.', [
-        {
-          text: 'View Fleet',
-          onPress: () => {
-            // Reset form
-            setModel('');
-            setPlateNumber('');
-            setDailyRate('');
-            setDescription('');
-            setImageUri(null);
-            navigation.navigate('VehiclesTab');
+
+      const onDone = () => {
+        setModel('');
+        setPlateNumber('');
+        setDailyRate('');
+        setDescription('');
+        setImageUri(null);
+        navigation.navigate('VehiclesTab');
+      };
+
+      if (Platform.OS === 'web') {
+        window.alert('Vehicle Added! 🚗 The vehicle is now active in your fleet catalog.');
+        onDone();
+      } else {
+        Alert.alert('Vehicle Added! 🚗', 'The vehicle is now active in your fleet catalog.', [
+          {
+            text: 'View Fleet',
+            onPress: onDone,
           },
-        },
-      ]);
+        ]);
+      }
     } catch (err) {
       setGeneralError(err.message || 'Failed to add vehicle to fleet.');
     } finally {

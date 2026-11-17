@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import client from './client';
 
 export const getVehiclesApi = async (params = {}) => {
@@ -11,17 +12,26 @@ export const getVehicleByIdApi = async (id) => {
 };
 
 export const createVehicleApi = async (formData) => {
+  const headers = Platform.OS === 'web'
+    ? { 'Content-Type': undefined }
+    : { 'Content-Type': 'multipart/form-data' };
+
   const response = await client.post('/api/vehicles', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers,
+    transformRequest: (data) => data,
   });
   return response.data;
 };
 
 export const updateVehicleApi = async (id, data, hasFile = false) => {
-  const headers = hasFile ? { 'Content-Type': 'multipart/form-data' } : {};
-  const response = await client.put(`/api/vehicles/${id}`, data, { headers });
+  const headers = hasFile
+    ? (Platform.OS === 'web' ? { 'Content-Type': undefined } : { 'Content-Type': 'multipart/form-data' })
+    : {};
+
+  const response = await client.put(`/api/vehicles/${id}`, data, {
+    headers,
+    transformRequest: (data) => data,
+  });
   return response.data;
 };
 
