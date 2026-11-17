@@ -117,7 +117,7 @@ const LoginScreen = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.presetBtn}
-                onPress={() => setCustomUrl('http://192.168.248.163:5000')}
+                onPress={() => setCustomUrl('http://192.168.190.163:5000')}
               >
                 <Text style={styles.presetBtnText}>Wi-Fi (Phone)</Text>
               </TouchableOpacity>

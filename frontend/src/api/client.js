@@ -3,14 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // ── HOST MACHINE IP ──────────────────────────────────────────────────────────
-// Detected host Wi-Fi IP: 192.168.248.163
+// Detected host Wi-Fi IP: 192.168.190.163
 // Android Emulator: use 10.0.2.2 (special alias to host)
-// Physical Phone on same Wi-Fi: use 192.168.248.163
+// Physical Phone on same Wi-Fi: use 192.168.190.163
 // ─────────────────────────────────────────────────────────────────────────────
 export const DEFAULT_BASE_URL = Platform.select({
+  web: 'http://localhost:5000',          // Web browser on PC
   android: 'http://10.0.2.2:5000',       // Android Emulator → host PC
-  ios: 'http://192.168.248.163:5000',    // iOS device on same Wi-Fi
-  default: 'http://192.168.248.163:5000',// Web or physical Android on Wi-Fi
+  ios: 'http://192.168.190.163:5000',    // iOS device on same Wi-Fi
+  default: 'http://localhost:5000',
 });
 
 const client = axios.create({
@@ -25,7 +26,12 @@ const client = axios.create({
 client.interceptors.request.use(
   async (config) => {
     try {
-      const storedBaseUrl = await AsyncStorage.getItem('@custom_base_url');
+      let storedBaseUrl = await AsyncStorage.getItem('@custom_base_url');
+      // If running on web in the browser, always ensure localhost is used
+      if (Platform.OS === 'web' && storedBaseUrl && (storedBaseUrl.includes('10.0.2.2') || storedBaseUrl.includes('192.168.'))) {
+        storedBaseUrl = 'http://localhost:5000';
+        await AsyncStorage.setItem('@custom_base_url', 'http://localhost:5000');
+      }
       if (storedBaseUrl) {
         config.baseURL = storedBaseUrl;
       }
