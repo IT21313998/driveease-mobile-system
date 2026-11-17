@@ -52,6 +52,9 @@ const VehiclesStackNavigator = () => (
 
 // Main Bottom Tab Navigator
 const AppTabs = () => {
+  const { user } = useContext(AuthContext);
+  const isAdmin = user?.role === 'admin';
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -88,13 +91,18 @@ const AppTabs = () => {
       <Tab.Screen
         name="MyBookingsTab"
         component={MyBookingsScreen}
-        options={{ title: 'My Bookings', tabBarLabel: 'Bookings' }}
+        options={{
+          title: isAdmin ? 'All Reservations' : 'My Bookings',
+          tabBarLabel: 'Bookings',
+        }}
       />
-      <Tab.Screen
-        name="AddVehicleTab"
-        component={AddVehicleScreen}
-        options={{ title: 'Add Vehicle', tabBarLabel: 'Add Fleet' }}
-      />
+      {isAdmin && (
+        <Tab.Screen
+          name="AddVehicleTab"
+          component={AddVehicleScreen}
+          options={{ title: 'Add New Vehicle', tabBarLabel: 'Add Fleet' }}
+        />
+      )}
       <Tab.Screen
         name="ProfileTab"
         component={ProfileScreen}
