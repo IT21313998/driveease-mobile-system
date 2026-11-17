@@ -110,6 +110,12 @@ const LoginScreen = ({ navigation }) => {
             />
             <View style={styles.presetButtons}>
               <TouchableOpacity
+                style={[styles.presetBtn, { backgroundColor: '#10B981' }]}
+                onPress={() => setCustomUrl('https://driveease-api-it21313998.onrender.com')}
+              >
+                <Text style={[styles.presetBtnText, { color: '#FFFFFF', fontWeight: '700' }]}>☁️ Live Render</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.presetBtn}
                 onPress={() => setCustomUrl('http://10.0.2.2:5000')}
               >
@@ -133,7 +139,11 @@ const LoginScreen = ({ navigation }) => {
               onPress={async () => {
                 await setCustomBaseUrl(customUrl);
                 setShowServerConfig(false);
-                Alert.alert('Saved', `API endpoint set to: ${customUrl}`);
+                if (Platform.OS === 'web') {
+                  window.alert(`Connected to:\n${customUrl}`);
+                } else {
+                  Alert.alert('Saved', `API endpoint set to: ${customUrl}`);
+                }
               }}
             />
           </View>
