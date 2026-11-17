@@ -10,20 +10,22 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { getMyRentalsApi, updateRentalStatusApi } from '../../api/rentalApi';
+import { getMyRentalsApi, getAllRentalsApi, updateRentalStatusApi } from '../../api/rentalApi';
 import StatusBadge from '../../components/StatusBadge';
 import { LoadingView, EmptyState } from '../../components/LoadingView';
 import { AuthContext } from '../../context/AuthContext';
 
 const MyBookingsScreen = ({ navigation }) => {
-  const { baseUrl } = useContext(AuthContext);
+  const { baseUrl, user } = useContext(AuthContext);
+  const isAdmin = user?.role === 'admin';
+
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchBookings = useCallback(async () => {
     try {
-      const data = await getMyRentalsApi();
+      const data = isAdmin ? await getAllRentalsApi() : await getMyRentalsApi();
       setRentals(data);
     } catch (err) {
       console.warn('Could not fetch bookings', err.message);
@@ -31,7 +33,7 @@ const MyBookingsScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -45,40 +47,44 @@ const MyBookingsScreen = ({ navigation }) => {
     fetchBookings();
   };
 
-  const handleCancelBooking = (bookingId, vehicleModel) => {
-    const doCancel = async () => {
+  const handleUpdateStatus = (bookingId, vehicleModel, newStatus) => {
+    const doUpdate = async () => {
       try {
-        await updateRentalStatusApi(bookingId, 'Cancelled');
+        await updateRentalStatusApi(bookingId, newStatus);
+        const msg = newStatus === 'Completed'
+          ? 'Rental marked as Completed. Vehicle has been returned to the available fleet!'
+          : 'Reservation has been cancelled. Vehicle released back to the fleet.';
+        
         if (Platform.OS === 'web') {
-          window.alert('Booking Cancelled: The vehicle is now released back to the fleet.');
+          window.alert(msg);
         } else {
-          Alert.alert('Booking Cancelled', 'The vehicle is now released back to the fleet.');
+          Alert.alert('Status Updated', msg);
         }
         fetchBookings();
       } catch (err) {
         if (Platform.OS === 'web') {
-          window.alert('Error: ' + (err.message || 'Failed to cancel booking'));
+          window.alert('Error: ' + (err.message || 'Failed to update status'));
         } else {
-          Alert.alert('Error', err.message || 'Failed to cancel booking');
+          Alert.alert('Error', err.message || 'Failed to update status');
         }
       }
     };
 
+    const actionText = newStatus === 'Completed'
+      ? `mark the rental for ${vehicleModel} as Returned / Completed`
+      : `cancel the reservation for ${vehicleModel}`;
+
     if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm(`Are you sure you want to cancel your rental booking for ${vehicleModel}?`)) {
-        doCancel();
+      if (typeof window !== 'undefined' && window.confirm(`Are you sure you want to ${actionText}?`)) {
+        doUpdate();
       }
     } else {
       Alert.alert(
-        'Cancel Reservation',
-        `Are you sure you want to cancel your rental booking for ${vehicleModel}?`,
+        'Update Reservation',
+        `Are you sure you want to ${actionText}?`,
         [
           { text: 'No', style: 'cancel' },
-          {
-            text: 'Yes, Cancel',
-            style: 'destructive',
-            onPress: doCancel,
-          },
+          { text: 'Yes, Confirm', onPress: doUpdate },
         ]
       );
     }
@@ -86,7 +92,8 @@ const MyBookingsScreen = ({ navigation }) => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -95,32 +102,47 @@ const MyBookingsScreen = ({ navigation }) => {
 
   const renderBookingCard = ({ item }) => {
     const vehicle = item.vehicleId || {};
+    const canCancel = ['Pending', 'Confirmed'].includes(item.status);
+
     const imageUrl = vehicle.image?.startsWith('http')
       ? vehicle.image
       : `${baseUrl}${vehicle.image}`;
-    const canCancel = ['Pending', 'Confirmed'].includes(item.status);
 
     return (
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
+        <View style={styles.headerRow}>
           {vehicle.image ? (
-            <Image source={{ uri: imageUrl }} style={styles.thumbImage} resizeMode="cover" />
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.vehicleThumb}
+              resizeMode="cover"
+            />
           ) : (
-            <View style={[styles.thumbImage, styles.placeholderThumb]}>
-              <Text style={{ fontSize: 20 }}>🚗</Text>
+            <View style={[styles.vehicleThumb, styles.noThumb]}>
+              <Text style={{ fontSize: 22 }}>🚗</Text>
             </View>
           )}
 
           <View style={styles.headerInfo}>
             <Text style={styles.vehicleTitle} numberOfLines={1}>
-              {vehicle.model || 'Vehicle Rental'}
+              {vehicle.model || 'Unknown Vehicle'}
             </Text>
-            <Text style={styles.plateText}>{vehicle.plateNumber || 'No plate'}</Text>
-            <View style={{ marginTop: 4 }}>
-              <StatusBadge status={item.status} />
-            </View>
+            <Text style={styles.vehicleSub}>
+              {vehicle.plateNumber ? `Plate: ${vehicle.plateNumber}` : 'DriveEase Rental'}
+            </Text>
           </View>
+
+          <StatusBadge status={item.status} />
         </View>
+
+        {/* Admin only: Customer details banner */}
+        {isAdmin && item.userId ? (
+          <View style={styles.customerBox}>
+            <Text style={styles.customerBoxText}>
+              👤 Customer: <Text style={{ fontWeight: '700' }}>{item.userId?.name || 'Customer'}</Text> ({item.userId?.email || 'N/A'})
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.detailsDivider} />
 
@@ -141,20 +163,31 @@ const MyBookingsScreen = ({ navigation }) => {
           <Text style={styles.notesText}>Note: {item.notes}</Text>
         ) : null}
 
+        {/* Action Buttons */}
         {canCancel ? (
-          <TouchableOpacity
-            style={styles.cancelBtn}
-            onPress={() => handleCancelBooking(item._id, vehicle.model || 'vehicle')}
-          >
-            <Text style={styles.cancelBtnText}>Cancel Reservation</Text>
-          </TouchableOpacity>
+          <View style={styles.actionsRow}>
+            {isAdmin && item.status === 'Confirmed' && (
+              <TouchableOpacity
+                style={styles.completeBtn}
+                onPress={() => handleUpdateStatus(item._id, vehicle.model || 'vehicle', 'Completed')}
+              >
+                <Text style={styles.completeBtnText}>✓ Mark as Returned</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => handleUpdateStatus(item._id, vehicle.model || 'vehicle', 'Cancelled')}
+            >
+              <Text style={styles.cancelBtnText}>✕ Cancel Reservation</Text>
+            </TouchableOpacity>
+          </View>
         ) : null}
       </View>
     );
   };
 
   if (loading) {
-    return <LoadingView message="Loading your bookings..." />;
+    return <LoadingView message="Loading bookings..." />;
   }
 
   return (
@@ -169,8 +202,8 @@ const MyBookingsScreen = ({ navigation }) => {
         }
         ListEmptyComponent={
           <EmptyState
-            title="No Bookings Yet"
-            description="You haven't reserved any vehicles. Check out our fleet to book a ride!"
+            title="No Bookings Found"
+            description={isAdmin ? "No customer reservations recorded in the system yet." : "You haven't reserved any vehicles yet. Explore the fleet to book a ride!"}
           />
         }
       />
@@ -198,84 +231,111 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  cardHeader: {
+  headerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  thumbImage: {
-    width: 70,
-    height: 70,
+  vehicleThumb: {
+    width: 52,
+    height: 52,
     borderRadius: 8,
-    backgroundColor: '#E2E8F0',
     marginRight: 12,
+    backgroundColor: '#E2E8F0',
   },
-  placeholderThumb: {
+  noThumb: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerInfo: {
     flex: 1,
-    justifyContent: 'center',
   },
   vehicleTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
   },
-  plateText: {
+  vehicleSub: {
     fontSize: 12,
     color: '#64748B',
-    marginTop: 1,
+    marginTop: 2,
+  },
+  customerBox: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  customerBoxText: {
+    fontSize: 12,
+    color: '#334155',
   },
   detailsDivider: {
     height: 1,
     backgroundColor: '#F1F5F9',
-    marginVertical: 12,
+    marginVertical: 10,
   },
   detailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   metaLabel: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#94A3B8',
     textTransform: 'uppercase',
-    fontWeight: '600',
   },
   metaValue: {
     fontSize: 13,
-    color: '#334155',
     fontWeight: '600',
+    color: '#334155',
     marginTop: 2,
   },
   totalPrice: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#2563EB',
-    marginTop: 1,
+    marginTop: 2,
   },
   notesText: {
     fontSize: 12,
-    fontStyle: 'italic',
     color: '#64748B',
-    marginTop: 8,
-    backgroundColor: '#F8FAFC',
-    padding: 6,
-    borderRadius: 6,
+    fontStyle: 'italic',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  completeBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  completeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   cancelBtn: {
-    marginTop: 12,
-    paddingVertical: 9,
-    borderWidth: 1,
-    borderColor: '#F87171',
+    flex: 1,
+    backgroundColor: '#FEE2E2',
     borderRadius: 8,
+    paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
   },
   cancelBtnText: {
     color: '#DC2626',
-    fontWeight: '600',
     fontSize: 13,
+    fontWeight: '700',
   },
 });
 
