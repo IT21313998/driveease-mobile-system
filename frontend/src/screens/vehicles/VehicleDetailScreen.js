@@ -102,7 +102,7 @@ const VehicleDetailScreen = ({ route, navigation }) => {
         <Text style={styles.plateText}>Plate: {vehicle.plateNumber}</Text>
 
         <View style={styles.priceContainer}>
-          <Text style={styles.priceValue}>${vehicle.dailyRate}</Text>
+          <Text style={styles.priceValue}>Rs. {Number(vehicle.dailyRate).toLocaleString()}</Text>
           <Text style={styles.priceSub}> / 24-hour rental</Text>
         </View>
 

@@ -190,13 +190,13 @@ const AddVehicleScreen = ({ navigation }) => {
       <View style={styles.row}>
         <View style={{ flex: 1, marginRight: 8 }}>
           <Input
-            label="Daily Rate ($)"
+            label="Daily Rate (LKR / Rs.)"
             value={dailyRate}
             onChangeText={(t) => {
               setDailyRate(t);
               if (errors.dailyRate) setErrors({ ...errors, dailyRate: null });
             }}
-            placeholder="50"
+            placeholder="e.g. 8500"
             keyboardType="numeric"
             error={errors.dailyRate}
           />

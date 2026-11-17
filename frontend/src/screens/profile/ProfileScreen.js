@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import {
   View,
   Text,
@@ -8,41 +8,10 @@ import {
   Platform,
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
-import Input from '../../components/Input';
 import Button from '../../components/Button';
 
 const ProfileScreen = () => {
-  const { user, logout, baseUrl, setCustomBaseUrl } = useContext(AuthContext);
-  const [urlInput, setUrlInput] = useState(baseUrl);
-  const [savingUrl, setSavingUrl] = useState(false);
-
-  const handleSaveUrl = async () => {
-    if (!urlInput.trim()) {
-      if (Platform.OS === 'web') {
-        window.alert('Please enter a valid backend URL');
-      } else {
-        Alert.alert('Error', 'Please enter a valid backend URL');
-      }
-      return;
-    }
-    setSavingUrl(true);
-    try {
-      await setCustomBaseUrl(urlInput);
-      if (Platform.OS === 'web') {
-        window.alert(`API base endpoint set to:\n${urlInput}`);
-      } else {
-        Alert.alert('URL Updated', `API base endpoint set to:\n${urlInput}`);
-      }
-    } catch (e) {
-      if (Platform.OS === 'web') {
-        window.alert(e.message);
-      } else {
-        Alert.alert('Error', e.message);
-      }
-    } finally {
-      setSavingUrl(false);
-    }
-  };
+  const { user, logout } = useContext(AuthContext);
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -77,26 +46,29 @@ const ProfileScreen = () => {
         </View>
       </View>
 
-      {/* Backend API Configuration Section */}
+      {/* Account Overview Card */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>🌐 Backend API Host URL</Text>
-        <Text style={styles.sectionSubtitle}>
-          Use your computer's LAN IP (e.g. http://192.168.1.15:5000) for mobile Expo testing or your live Render URL.
-        </Text>
+        <Text style={styles.sectionTitle}>👤 Account Overview</Text>
+        
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Account Status</Text>
+          <Text style={styles.infoValueSuccess}>Verified Active</Text>
+        </View>
 
-        <Input
-          value={urlInput}
-          onChangeText={setUrlInput}
-          placeholder="http://192.168.1.x:5000 or https://..."
-          autoCapitalize="none"
-        />
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Membership</Text>
+          <Text style={styles.infoValue}>DriveEase Premium</Text>
+        </View>
 
-        <Button
-          title="Save API Endpoint"
-          onPress={handleSaveUrl}
-          loading={savingUrl}
-          style={styles.saveUrlBtn}
-        />
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Support Hotline</Text>
+          <Text style={styles.infoValue}>+94 11 234 5678</Text>
+        </View>
+
+        <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+          <Text style={styles.infoLabel}>Email Support</Text>
+          <Text style={styles.infoValue}>support@driveease.lk</Text>
+        </View>
       </View>
 
       <Button
@@ -111,7 +83,7 @@ const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 16,
     backgroundColor: '#F8FAFC',
     flexGrow: 1,
   },
@@ -120,7 +92,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 24,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -188,19 +160,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 4,
+    marginBottom: 14,
   },
-  sectionSubtitle: {
-    fontSize: 13,
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  infoLabel: {
+    fontSize: 14,
     color: '#64748B',
-    lineHeight: 18,
-    marginBottom: 12,
+    fontWeight: '500',
   },
-  saveUrlBtn: {
-    marginTop: 4,
+  infoValue: {
+    fontSize: 14,
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  infoValueSuccess: {
+    fontSize: 14,
+    color: '#16A34A',
+    fontWeight: '700',
   },
   logoutBtn: {
-    marginTop: 10,
+    marginTop: 6,
     marginBottom: 30,
   },
 });

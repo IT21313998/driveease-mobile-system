@@ -71,7 +71,7 @@ const BookVehicleScreen = ({ route, navigation }) => {
 
       Alert.alert(
         'Booking Confirmed! 🎉',
-        `Your reservation for ${vehicle.model} has been confirmed. Total: $${estimatedCost}`,
+        `Your reservation for ${vehicle.model} has been confirmed. Total: Rs. ${Number(estimatedCost).toLocaleString()}`,
         [
           {
             text: 'View My Bookings',
@@ -100,7 +100,7 @@ const BookVehicleScreen = ({ route, navigation }) => {
       <View style={styles.summaryCard}>
         <Text style={styles.summaryTitle}>Selected Vehicle</Text>
         <Text style={styles.vehicleName}>{vehicle.model}</Text>
-        <Text style={styles.vehicleSub}>{vehicle.category} • ${vehicle.dailyRate}/day</Text>
+        <Text style={styles.vehicleSub}>{vehicle.category} • Rs. {Number(vehicle.dailyRate).toLocaleString()} / day</Text>
       </View>
 
       {generalError ? (
@@ -164,16 +164,16 @@ const BookVehicleScreen = ({ route, navigation }) => {
         </View>
         <View style={styles.costRow}>
           <Text style={styles.costLabel}>Rate:</Text>
-          <Text style={styles.costValue}>${vehicle.dailyRate} / day</Text>
+          <Text style={styles.costValue}>Rs. {Number(vehicle.dailyRate).toLocaleString()} / day</Text>
         </View>
         <View style={[styles.costRow, styles.costTotalRow]}>
           <Text style={styles.totalLabel}>Total Estimated Cost:</Text>
-          <Text style={styles.totalAmount}>${estimatedCost}</Text>
+          <Text style={styles.totalAmount}>Rs. {Number(estimatedCost).toLocaleString()}</Text>
         </View>
       </View>
 
       <Button
-        title={`Confirm & Book ($${estimatedCost})`}
+        title={`Confirm & Book (Rs. ${Number(estimatedCost).toLocaleString()})`}
         onPress={handleBooking}
         loading={loading}
         disabled={!isValidDateRange}

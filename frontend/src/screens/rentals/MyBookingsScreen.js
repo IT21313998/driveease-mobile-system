@@ -133,7 +133,7 @@ const MyBookingsScreen = ({ navigation }) => {
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.metaLabel}>Total ({item.totalDays} days)</Text>
-            <Text style={styles.totalPrice}>${item.totalCost}</Text>
+            <Text style={styles.totalPrice}>Rs. {Number(item.totalCost).toLocaleString()}</Text>
           </View>
         </View>
 

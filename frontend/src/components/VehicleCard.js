@@ -35,7 +35,7 @@ const VehicleCard = ({ vehicle, onPress }) => {
         <View style={styles.footerRow}>
           <View>
             <Text style={styles.rateLabel}>Daily Rate</Text>
-            <Text style={styles.rateValue}>${vehicle.dailyRate} <Text style={styles.perDay}>/day</Text></Text>
+            <Text style={styles.rateValue}>Rs. {Number(vehicle.dailyRate).toLocaleString()} <Text style={styles.perDay}>/day</Text></Text>
           </View>
           <Text style={styles.capacityText}>👥 {vehicle.seatingCapacity} Seats</Text>
         </View>
