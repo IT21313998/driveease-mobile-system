@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 import Input from '../../components/Input';
@@ -17,25 +18,47 @@ const ProfileScreen = () => {
 
   const handleSaveUrl = async () => {
     if (!urlInput.trim()) {
-      Alert.alert('Error', 'Please enter a valid backend URL');
+      if (Platform.OS === 'web') {
+        window.alert('Please enter a valid backend URL');
+      } else {
+        Alert.alert('Error', 'Please enter a valid backend URL');
+      }
       return;
     }
     setSavingUrl(true);
     try {
       await setCustomBaseUrl(urlInput);
-      Alert.alert('URL Updated', `API base endpoint set to:\n${urlInput}`);
+      if (Platform.OS === 'web') {
+        window.alert(`API base endpoint set to:\n${urlInput}`);
+      } else {
+        Alert.alert('URL Updated', `API base endpoint set to:\n${urlInput}`);
+      }
     } catch (e) {
-      Alert.alert('Error', e.message);
+      if (Platform.OS === 'web') {
+        window.alert(e.message);
+      } else {
+        Alert.alert('Error', e.message);
+      }
     } finally {
       setSavingUrl(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: logout },
-    ]);
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm) {
+        if (window.confirm('Are you sure you want to sign out?')) {
+          logout();
+        }
+      } else {
+        logout();
+      }
+    } else {
+      Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign Out', style: 'destructive', onPress: logout },
+      ]);
+    }
   };
 
   return (

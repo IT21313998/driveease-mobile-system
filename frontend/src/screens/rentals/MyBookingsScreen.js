@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
   Image,
+  Platform,
 } from 'react-native';
 import { getMyRentalsApi, updateRentalStatusApi } from '../../api/rentalApi';
 import StatusBadge from '../../components/StatusBadge';
@@ -45,26 +46,42 @@ const MyBookingsScreen = ({ navigation }) => {
   };
 
   const handleCancelBooking = (bookingId, vehicleModel) => {
-    Alert.alert(
-      'Cancel Reservation',
-      `Are you sure you want to cancel your rental booking for ${vehicleModel}?`,
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await updateRentalStatusApi(bookingId, 'Cancelled');
-              Alert.alert('Booking Cancelled', 'The vehicle is now released back to the fleet.');
-              fetchBookings();
-            } catch (err) {
-              Alert.alert('Error', err.message || 'Failed to cancel booking');
-            }
+    const doCancel = async () => {
+      try {
+        await updateRentalStatusApi(bookingId, 'Cancelled');
+        if (Platform.OS === 'web') {
+          window.alert('Booking Cancelled: The vehicle is now released back to the fleet.');
+        } else {
+          Alert.alert('Booking Cancelled', 'The vehicle is now released back to the fleet.');
+        }
+        fetchBookings();
+      } catch (err) {
+        if (Platform.OS === 'web') {
+          window.alert('Error: ' + (err.message || 'Failed to cancel booking'));
+        } else {
+          Alert.alert('Error', err.message || 'Failed to cancel booking');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Are you sure you want to cancel your rental booking for ${vehicleModel}?`)) {
+        doCancel();
+      }
+    } else {
+      Alert.alert(
+        'Cancel Reservation',
+        `Are you sure you want to cancel your rental booking for ${vehicleModel}?`,
+        [
+          { text: 'No', style: 'cancel' },
+          {
+            text: 'Yes, Cancel',
+            style: 'destructive',
+            onPress: doCancel,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const formatDate = (dateStr) => {

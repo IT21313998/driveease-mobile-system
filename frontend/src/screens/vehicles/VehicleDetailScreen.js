@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { getVehicleByIdApi, deleteVehicleApi } from '../../api/vehicleApi';
 import StatusBadge from '../../components/StatusBadge';
@@ -37,29 +38,45 @@ const VehicleDetailScreen = ({ route, navigation }) => {
   }, [vehicleId]);
 
   const handleDelete = () => {
-    Alert.alert(
-      'Confirm Deletion',
-      `Are you sure you want to permanently delete ${vehicle?.model}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await deleteVehicleApi(vehicleId);
-              Alert.alert('Success', 'Vehicle removed from fleet');
-              navigation.goBack();
-            } catch (err) {
-              Alert.alert('Cannot Delete', err.message);
-            } finally {
-              setDeleting(false);
-            }
+    const doDelete = async () => {
+      setDeleting(true);
+      try {
+        await deleteVehicleApi(vehicleId);
+        if (Platform.OS === 'web') {
+          window.alert('Success: Vehicle removed from fleet');
+        } else {
+          Alert.alert('Success', 'Vehicle removed from fleet');
+        }
+        navigation.goBack();
+      } catch (err) {
+        if (Platform.OS === 'web') {
+          window.alert('Cannot Delete: ' + err.message);
+        } else {
+          Alert.alert('Cannot Delete', err.message);
+        }
+      } finally {
+        setDeleting(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Are you sure you want to permanently delete ${vehicle?.model}?`)) {
+        doDelete();
+      }
+    } else {
+      Alert.alert(
+        'Confirm Deletion',
+        `Are you sure you want to permanently delete ${vehicle?.model}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: doDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (loading || !vehicle) {
